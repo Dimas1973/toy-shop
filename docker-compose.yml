@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+
+  # База данных PostgreSQL
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: toyshop
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql  # запускается автоматически
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # 5433 чтобы не конфликтовать с локальным PostgreSQL
+
+  # Сервер FastAPI
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/toyshop
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  # Фронтенд React
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
